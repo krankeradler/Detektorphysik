@@ -1,0 +1,51 @@
+
+Dear all,
+
+it was a very good hands-on session yesterday where you managed to set up the whole muon hodoscope of 3 2S modules.
+In the appendix you can find the example data I took already with the hodoscope. You can use it to write your analysis scripts with which you can then analyze the data we take right now.
+A first look to the data looks fine but the rate of the coincidence signal from the two scintillators is still very low. I will see if this is improvable...
+"clusters1.txt": All these events were taken without touching the hardware in between.
+"clusters2.txt": I had to unplug some things between the runs from the first file and these runs. So here it could be that the module in the middle is slightly different aligned to the top and bottom module as in the runs from "clusters1.txt"
+
+About the heights of the silicon sensors in the hodoscope.
+From bottom to top in cm:
+0, 0.18, 2.8, 3.2, 5.7, 6.1
+The lowest module is the 1.8mm module and the others are both 4.0mm modules.
+The strip pitch is 90µm.
+
+For the data analysis you should form groups with 2 to 3 people. You can decide if you want to do the analysis from home or if you come next monday afternoon again to Campus North. If so, it would be nice if you inform me per e-mail.
+
+For the final presentation of your analysis results: Please write me one e-mail per group so that I know who is working with whom. If you finished the analysis, let me know for finding a date for the presentations. This should be latest in the last week of February.
+
+If you have any questions, please don’t be shy to ask.
+
+Cheers
+Lea
+
+On 20.12.23 09:29, Lea Stockmeier wrote:
+> Dear all,
+>
+> with this mail I would like to start the organization of the detector lecture exercise at Campus North.
+>
+> The exercise will consist of 3 parts:
+> 1. Hands-on sessions at Campus North (setting up the muon hodoscope, trigger logic, 2S module readout, data taking, ...)
+> 2. Data analysis (in sub-groups)
+> 3. Presentation of the results of all groups
+>
+> For the hands-on sessions we will meet multiple times at Campus North.
+> I created a poll with all dates in January at which I have time to meet with you.
+> Please fill this with all the dates you have time as well (use green for "yes", yellow for "if nearly everybody else has time, I could come as well" and red for "no")
+> https://dud-poll.inf.tu-dresden.de/detector_exercise/
+> The 08:00 slot means 08:00 to 12:00 and the 13:00 means 13:00 to 18:00.
+> We can for sure also meet a whole day if this fits for everybody.
+>
+> If we will not finish the hands-on sessions in January we will proceed with them in February.
+> In the end I think we meet 4 to 6 times at Campus North.
+>
+> For entering the Campus North area, you need your identity card!
+>
+> If you have any questions, please write me a mail!
+>
+> Cheers
+> Lea
+>
