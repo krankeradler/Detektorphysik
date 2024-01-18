@@ -50,5 +50,5 @@ def filter_array(out_events):
 
     return empty_events,event_counter, filtered_events
 
-print(filter_array(read_from_raw_data('clusters1.txt'))[0:3])
+#print(filter_array(read_from_raw_data('clusters1.txt'))[0:3])
 
