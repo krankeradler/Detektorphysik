@@ -137,11 +137,6 @@ def my_filter(event_list):
     return new_list
 
 
-
-                
-
-
-
 def hist_from_statistics(stuff,filtered=True):
     fig,axs = plt.subplots(nrows=3,ncols=3)
     axs = axs.flatten()
@@ -164,10 +159,6 @@ def hist_from_statistics(stuff,filtered=True):
     axs[8].hist(stuff[8],bins=4)
     axs[8].set_xlabel('Cluster Thickness')
     plt.show()
-easy_plotter(event_list)
-
-
-
 
 
 def splitter(event_list):
@@ -199,61 +190,84 @@ def splitter(event_list):
 
 
 #hist_from_statistics(statistics(my_filter(event_list)))
-six_event_list = splitter(my_filter(resort_and_stuff(event_list)))[5]
+one_event_list,two_event_list,three_event_list,four_event_list,five_event_list,six_event_list = splitter(my_filter(resort_and_stuff(event_list)))
+easy_plotter(event_list)
+
 
 #easy_plotter(six_event_list[0:1],1)
 
 
 
-def alignment(event_list):
-    offset_list = np.zeros((len(event_list),len(event_list[0])))
-    for i,event in enumerate(event_list):
-        angles = angle_finder_for_alignment(event,offset_list[i])
-        for j in range(len(event)-2):
-            offset_list[i][j+2] = np.tan(angles[0])*(list_with_distances[j+2]-list_with_distances[j+1])/0.09 +offset_list[i][j+1]+event[j+1][2]-event[j+2][2]
-        print(angles)
-        print(angle_finder_for_alignment(event,offset_list[i]))
-    fig,axs = plt.subplots(nrows=2,ncols=2)
-    axs=axs.flatten()
-    for i in range(4):
-        axs[i].hist(offset_list.T[i+2],bins=1000)
-        axs[i].set_xlim(-40,40)
-        axs[i].set_title(np.mean(offset_list.T[i+2]))
+def alignment(event_list,make_alignment_plot=True):
     
-    plt.show()
+    offset_list = np.zeros((len(event_list),12))
+    if len(event_list[0])!=6:
+        print('Wrong length of event_list. Use events with 6 long')
+        return offset_list
+    for i,event in enumerate(event_list):
+        angles = angle_finder(event,offset_list[i])
+        for j in range(len(event)-2):
+            offset_list[i][j+2+6*int(event[j+2][5])] = np.tan(angles[0])*(list_with_distances[j+2]-list_with_distances[j+1])/0.09 +offset_list[i][j+1+6*int(event[j+1][5])]+event[j+1][2]-event[j+2][2]
+    
+    if make_alignment_plot:
+        fig,axs = plt.subplots(nrows=3,ncols=4)
+        axs=axs.flatten()
 
-def angle_finder_for_alignment(event,offset_list):
+        for i in range(12):
+            axs[i].hist(offset_list.T[i],bins=1000)
+            axs[i].set_xlim(-40,40)
+            axs[i].set_title(np.mean(offset_list.T[i]))
+        plt.show()
+    return np.mean(offset_list,axis=0)
+
+
+def angle_finder(event,offset_list):
     angles = []
-    #print(event)
-    #print(offset_list)
     for i in range(len(event)-1):
-        angles.append(np.arctan(0.09*(event[i+1][2]-event[i][2]+offset_list[i+1]-offset_list[i])/(list_with_distances[i+1] - list_with_distances[i])))
-    #print(f'angles of event are {angles}')
+        angles.append(np.arctan(0.09*(event[i+1][2]-event[i][2]+offset_list[i+1+6*int(event[i+1][5])]-offset_list[i+6*int(event[i][5])])/(list_with_distances[int(event[i+1][4])] - list_with_distances[int(event[i][4])])))
     return angles
+
+
 print('CLEAR --------------------->>>>>>>>>>>>>>>>>>>>>>>>')
-alignment(six_event_list)
+offset_list = alignment(six_event_list)
 
+print(six_event_list[0])
 
-def angle_finder_old(event_list):
-    #finds angles of events
-    #in: list of events with n(event) clusters
-    #out: list of angles wit n(event)-1 angles
-    angles = []
-    for event in resort(event_list):
-        cluster_number = len(event)
-        print(cluster_number)
-        angle_list = []
-        for i in range(cluster_number-1):
-            z_pos,y_pos = transform_to_position(event[i][0],event[i][1])
-            z_pos_next,_ = transform_to_position(event[i+1][0],event[i+1][1])
-            z_pos = int(z_pos)
-            z_pos_next = int(z_pos_next)
-            angle_list.append(np.arctan( (event[i+1][2]-event[i][2]) / (list_with_distances[z_pos_next] -list_with_distances[z_pos])) )
-        #angles.append(np.mean(np.array(angle_list,dtype=float)))
-        angles.append(angle_list)
-    return angles 
+def angle(event_list,offset_list,to_degree,enable_filter,cut_value):
+    import math
+    angle_for_event = []
+    for event in event_list:
+        angles = angle_finder(event,offset_list)
+        test_value =np.std(angles)/(abs(np.mean(angles)))
+        if enable_filter and test_value >cut_value:
+            continue
+        angle_for_event.append(360/math.pi*np.mean(angles))
+    return angle_for_event
+two_angle=angle(two_event_list,offset_list,True,True,1.)
+three_angle=angle(three_event_list,offset_list,True,True,1.)
+four_angle=angle(four_event_list,offset_list,True,True,1.)
+five_angle=angle(five_event_list,offset_list,True,True,1.)
+six_angle=angle(six_event_list,offset_list,True,True,1.)
+all_angles = two_angle+three_angle+four_angle+five_angle+six_angle
 
+fig,axs = plt.subplots(nrows=3,ncols=2)
+axs = axs.flatten()
 
-
+fig.suptitle('Angle Distribution of muons')
+axs[0].hist(two_angle,bins=1000)
+axs[0].set_title(f'Angle Distribution of all two Events. N={len(two_angle)}' )
+axs[1].hist(three_angle,bins=1000)
+axs[1].set_title(f'Angle Distribution of all three Events. N={len(three_angle)}' )
+axs[2].hist(four_angle,bins=1000)
+axs[2].set_title(f'Angle Distribution of all four Events. N={len(four_angle)}' )
+axs[3].hist(five_angle,bins=1000)
+axs[3].set_title(f'Angle Distribution of all five Events. N={len(five_angle)}' )
+axs[4].hist(six_angle,bins=1000)
+axs[4].set_title(f'Angle Distribution of all six Events. N={len(six_angle)}' )
+axs[5].hist(all_angles,bins=1000)
+axs[5].set_title(f'Angle Distribution of all events. N={len(all_angles)}')
+for i in range(6):
+    axs[i].set_xlabel('Angles in degree')
+plt.show()
 #alignment(six_event_list)
 #alignment(resort(six_event_list))
