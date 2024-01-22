@@ -6,7 +6,7 @@ from tqdm import tqdm
 list_with_distances = [0, 0.18, 2.8, 3.2, 5.7, 6.1]
 color_for_y_position = ['green','red']
 
-empty_events, events_number, event_list = read_in.filter_array(read_in.read_from_raw_data('clusters1.txt'))
+empty_events, events_number, event_list = read_in.filter_array(read_in.read_from_raw_data('clusters2.txt'))
 print(f"There are {empty_events} Empty Events and {events_number} recorded events. \n \t ==> {100*events_number/(events_number+empty_events)}% hits")
 
 
@@ -43,6 +43,7 @@ def resort_and_stuff(event_list):
             cluster.append(z_pos)
             cluster.append(y_pos)
             new_single_event.append(cluster)
+#        event_new.append(new_single_event)
         event_new.append(np.array(new_single_event)[np.argsort(np.array(z_pos_list))])
     return event_new #a list of 2d np arrays
 
@@ -67,8 +68,8 @@ def list_to_line(event):
     x_vals,y_vals,z_vals = [],[],[]
     for cluster in event:
         x_vals.append(cluster[2])
-        z_position,y_position = transform_to_position(cluster[0],cluster[1]) #könnte man auch vereinfachen
-        y_vals.append(color_for_y_position[y_position])
+        z_position,y_position = transform_to_position(int(cluster[0]),int(cluster[1])) #könnte man auch vereinfachen
+        y_vals.append(color_for_y_position[int(y_position)])
         z_vals.append(list_with_distances[z_position])
 
     return x_vals,y_vals,z_vals
@@ -207,7 +208,7 @@ def alignment(event_list,make_alignment_plot=True):
     for i,event in enumerate(event_list):
         angles = angle_finder(event,offset_list[i])
         for j in range(len(event)-2):
-            offset_list[i][j+2+6*int(event[j+2][5])] = np.tan(angles[0])*(list_with_distances[j+2]-list_with_distances[j+1])/0.09 +offset_list[i][j+1+6*int(event[j+1][5])]+event[j+1][2]-event[j+2][2]
+            offset_list[i][int(event[j+2][4])+6*int(event[j+2][5])] = np.tan(angles[0])*(list_with_distances[j+2]-list_with_distances[j+1])/0.009 +offset_list[i][int(event[j+1][4])+6*int(event[j+1][5])]+event[j+1][2]-event[j+2][2]
     
     if make_alignment_plot:
         fig,axs = plt.subplots(nrows=3,ncols=4)
@@ -223,51 +224,70 @@ def alignment(event_list,make_alignment_plot=True):
 
 def angle_finder(event,offset_list):
     angles = []
+    import math
     for i in range(len(event)-1):
-        angles.append(np.arctan(0.09*(event[i+1][2]-event[i][2]+offset_list[i+1+6*int(event[i+1][5])]-offset_list[i+6*int(event[i][5])])/(list_with_distances[int(event[i+1][4])] - list_with_distances[int(event[i][4])])))
+        #the_angle = np.arctan(0.009*(event[i+1][2]-event[i][2]+offset_list[i+1+6*int(event[i+1][5])]-offset_list[i+6*int(event[i][5])])/(list_with_distances[int(event[i+1][4])] - list_with_distances[int(event[i][4])]))
+        the_angle = 0.009*(event[i+1][2]-event[i][2]+offset_list[int(event[i+1][4]+6*event[i+1][5])]-offset_list[int(event[i][4]+6*event[i][5])])/(list_with_distances[int(event[i+1][4])] - list_with_distances[int(event[i][4])])
+
+        angles.append(math.atan(the_angle))
+            
     return angles
 
 
 print('CLEAR --------------------->>>>>>>>>>>>>>>>>>>>>>>>')
 offset_list = alignment(six_event_list)
 
-print(six_event_list[0])
 
-def angle(event_list,offset_list,to_degree,enable_filter,cut_value):
+np.savez('Offset_list_Cluster2',offset_list)
+offset_list = np.load('Offset_list_Cluster2.npz')['arr_0']
+
+
+def angle(event_list,offset_list,to_degree):
     import math
     angle_for_event = []
+    continue_condition = False
+    debug_events = []
     for event in event_list:
-        angles = angle_finder(event,offset_list)
-        test_value =np.std(angles)/(abs(np.mean(angles)))
-        if enable_filter and test_value >cut_value:
+        angles = np.array(angle_finder(event,offset_list))
+        if to_degree:
+            calibration = 360/(2*math.pi)
+        else:
+            calibration = 1.
+        angles=angles*calibration
+        mean_value = np.mean(angles)
+        if len(np.unique(np.heaviside(angles,1)))!=1 and abs(mean_value) >2.5:
+            debug_events.append(event)
             continue
-        angle_for_event.append(360/math.pi*np.mean(angles))
+        angle_for_event.append(mean_value)
+    easy_plotter(debug_events,1)
     return angle_for_event
-two_angle=angle(two_event_list,offset_list,True,True,1.)
-three_angle=angle(three_event_list,offset_list,True,True,1.)
-four_angle=angle(four_event_list,offset_list,True,True,1.)
-five_angle=angle(five_event_list,offset_list,True,True,1.)
-six_angle=angle(six_event_list,offset_list,True,True,1.)
-all_angles = two_angle+three_angle+four_angle+five_angle+six_angle
 
+two_angle=angle(two_event_list,offset_list,True)
+three_angle=angle(three_event_list,offset_list,True)
+four_angle=angle(four_event_list,offset_list,True)
+five_angle=angle(five_event_list,offset_list,True)
+six_angle=angle(six_event_list,offset_list,True)
+all_angles = two_angle+three_angle+four_angle+five_angle+six_angle
 fig,axs = plt.subplots(nrows=3,ncols=2)
 axs = axs.flatten()
 
 fig.suptitle('Angle Distribution of muons')
-axs[0].hist(two_angle,bins=1000)
+axs[0].hist(two_angle,bins=120)
 axs[0].set_title(f'Angle Distribution of all two Events. N={len(two_angle)}' )
-axs[1].hist(three_angle,bins=1000)
+axs[1].hist(three_angle,bins=120)
 axs[1].set_title(f'Angle Distribution of all three Events. N={len(three_angle)}' )
-axs[2].hist(four_angle,bins=1000)
+axs[2].hist(four_angle,bins=120)
 axs[2].set_title(f'Angle Distribution of all four Events. N={len(four_angle)}' )
-axs[3].hist(five_angle,bins=1000)
+axs[3].hist(five_angle,bins=120)
 axs[3].set_title(f'Angle Distribution of all five Events. N={len(five_angle)}' )
-axs[4].hist(six_angle,bins=1000)
+axs[4].hist(six_angle,bins=120)
 axs[4].set_title(f'Angle Distribution of all six Events. N={len(six_angle)}' )
-axs[5].hist(all_angles,bins=1000)
+axs[5].hist(all_angles,bins=240)
 axs[5].set_title(f'Angle Distribution of all events. N={len(all_angles)}')
 for i in range(6):
     axs[i].set_xlabel('Angles in degree')
+    axs[i].set_xlim(-60,60)
 plt.show()
+
 #alignment(six_event_list)
 #alignment(resort(six_event_list))
